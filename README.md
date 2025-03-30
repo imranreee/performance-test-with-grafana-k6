@@ -37,6 +37,7 @@ choco install k6
 [Details installation instruction](https://grafana.com/docs/k6/latest/set-up/install-k6/)
 
 ---
+
 ## 🚀 How to Run Tests
 
 ### 🔧 1. Local Run
@@ -109,8 +110,11 @@ spec:
       name: checkout-test
       file: checkout.test.js
 ```
-> 📈 How to Scale
-> 
+
+---
+
+## 📈 How to Scale
+
 ➕ Add New Service Test
 1. Create tests/<service>.test.js
 
@@ -138,21 +142,23 @@ export const options = {
   }
 };
 ```
-> Important thresholds
+> Configure thresholds
 > 
-✅ **http_req_duration**: Measures overall API response time performance.  
-✅ **http_req_waiting (TTFB)**: Tracks the time to first byte, indicating server response delays.  
-✅ **http_req_receiving**: Measures how fast the response data is received after processing.  
-✅ **http_req_sending**: Tracks how quickly the request is sent to the server.  
-✅ **http_reqs**: Ensures the test is generating a sufficient number of API requests.  
-✅ **vus**: Ensures the correct number of virtual users (VUs) are active during the test.  
-✅ **iterations**: Ensures enough test cycles complete successfully to validate system behavior.  
-✅ **http_req_failed**: Helps track API failure rates and ensures reliability.  
-✅ **checks**: Ensures a high percentage of validation checks pass during the test.  
-✅ **http_req_duration{status:200}**: Monitors response time for successful (200 OK) requests.  
-✅ **http_req_duration{status:400}**: Tracks response times for client-side errors (400 series).  
-✅ **http_req_duration{status:500}**: Monitors backend server issues and response times for 500 errors.
+✅ http_req_duration: Measures overall API response time performance.  
+✅ http_req_waiting (TTFB): Tracks the time to first byte, indicating server response delays.  
+✅ http_req_receiving: Measures how fast the response data is received after processing.  
+✅ http_req_sending: Tracks how quickly the request is sent to the server.  
+✅ http_reqs: Ensures the test is generating a sufficient number of API requests.  
+✅ vus: Ensures the correct number of virtual users (VUs) are active during the test.  
+✅ iterations: Ensures enough test cycles complete successfully to validate system behavior.  
+✅ http_req_failed: Helps track API failure rates and ensures reliability.  
+✅ checks: Ensures a high percentage of validation checks pass during the test.  
+✅ http_req_duration{status:200}: Monitors response time for successful (200 OK) requests.  
+✅ http_req_duration{status:400}: Tracks response times for client-side errors (400 series).  
+✅ http_req_duration{status:500}: Monitors backend server issues and response times for 500 errors.
+
 ---
+
 ## 🔄 CI/CD Integration
 ✅ GitHub Actions (Example)
 
@@ -169,6 +175,7 @@ jobs:
 ```
 
 ---
+
 ## 🔍 Observability: Grafana + InfluxDB
 ✅ Setup InfluxDB Output
 
