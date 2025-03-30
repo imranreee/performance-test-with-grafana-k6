@@ -225,7 +225,7 @@ Use official K6 Grafana Dashboard or build custom dashboards with metrics:
 
 📸 Sample Dashboard:
 
-![Grafana Dashboard](grafana_dashboard.png)
+![Grafana Dashboard](img/grafana_dashboard.png)
 
 ---
 
