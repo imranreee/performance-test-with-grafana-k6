@@ -45,22 +45,15 @@ choco install k6
 
 ```bash
 
-k6 run tests/auth.test.js
+k6 run tests/example.test.js
 
 ```
-> To pass environment variables:
+> Custom Env. variable, Virtual Users (VUs), & Duration:
 
 ```bash
 
-k6 run -e ENV=dev -e BASE_URL=https://dev.example.com tests/auth.test.js
+ENV=prod DURATION=5m VUS=500 k6 run tests/example.test.js
 
-```
-> Custom Virtual Users (VU) & Duration:
-> Example: 20 VUs for 30 seconds
-
-```bash
-
-k6 run --vus 20 --duration 30s load-test.js
 ```
 
 ### ☁️ 2. K6 Cloud (Distributed Test)
@@ -68,7 +61,7 @@ k6 run --vus 20 --duration 30s load-test.js
 
 ```bash
 
-k6 cloud tests/auth.test.js
+k6 cloud tests/example.test.js
 
 ```
 > Make sure your options include:
@@ -145,6 +138,20 @@ export const options = {
   }
 };
 ```
+> Important thresholds
+> 
+✅ **http_req_duration**: Measures overall API response time performance.  
+✅ **http_req_waiting (TTFB)**: Tracks the time to first byte, indicating server response delays.  
+✅ **http_req_receiving**: Measures how fast the response data is received after processing.  
+✅ **http_req_sending**: Tracks how quickly the request is sent to the server.  
+✅ **http_reqs**: Ensures the test is generating a sufficient number of API requests.  
+✅ **vus**: Ensures the correct number of virtual users (VUs) are active during the test.  
+✅ **iterations**: Ensures enough test cycles complete successfully to validate system behavior.  
+✅ **http_req_failed**: Helps track API failure rates and ensures reliability.  
+✅ **checks**: Ensures a high percentage of validation checks pass during the test.  
+✅ **http_req_duration{status:200}**: Monitors response time for successful (200 OK) requests.  
+✅ **http_req_duration{status:400}**: Tracks response times for client-side errors (400 series).  
+✅ **http_req_duration{status:500}**: Monitors backend server issues and response times for 500 errors.
 ---
 ## 🔄 CI/CD Integration
 ✅ GitHub Actions (Example)
