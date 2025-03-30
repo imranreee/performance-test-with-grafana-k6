@@ -1,25 +1,34 @@
-import http from 'k6/http';
 import { check } from 'k6';
-import config from '../lib/config';
-import { loadUserData } from '../lib/dataLoader'; // Import the data loader function
+import {getConfig} from '../lib/config.js';
+import {loadUserData } from '../lib/dataLoader.js';
+import {sendPostRequest} from '../lib/httpHelper.js';
+import {parseDuration} from "../lib/timeHelper.js";
 
-const duration = __ENV.DURATION || '5m'; // Default to 5 minutes if no duration is passed
-const vus = __ENV.VUS || 100; // Default to 100 VUs if no VUs value is passed
+const durationStr = __ENV.DURATION || '5m';
+const totalDurationSec = parseDuration(durationStr);
+
+const rampUp = Math.floor(totalDurationSec * 0.1);
+const stay = Math.floor(totalDurationSec * 0.8);
+const rampDown = totalDurationSec - rampUp - stay;
+
+const vus = __ENV.VUS || 100;
+const userInputEnv = __ENV.ENV || 'dev';
+const projectId = __ENV.PROJECT_ID || 123456;
+const config = getConfig(userInputEnv);
+const users = loadUserData();
 
 export const options = {
     scenarios: {
-        checkout_spike: {
-            executor: 'spike',
-            startRate: 0,
-            timeUnit: '1s',
-            stages: [
-                { duration: '30s', target: 1000 },
-                { duration: duration, target: vus }, // Dynamic duration and VUs
-                { duration: '1m', target: 0 },
-            ],
+        checkout_scenario: {
+            executor: 'ramping-vus',
             exec: 'checkoutScenario',
             tags: { service: 'checkout' },
-        },
+            stages: [
+                { duration: `${rampUp}s`, target: vus },
+                { duration: `${stay}s`, target: vus },
+                { duration: `${rampDown}s`, target: 0 },
+            ]
+        }
     },
 
     thresholds: {
@@ -30,70 +39,62 @@ export const options = {
 
     cloud: {
         name: 'Distributed Load Test',
-        projectID: __ENV.PROJECT_ID || 123456,
+        projectID: projectId,
         staticIPs: true,
         drop_metrics: ['http_req_tls_handshaking', 'http_req_connecting'],
         drop_tags: { '*': ['instance_id'] },
         keep_tags: { http_req_waiting: ['instance_id'] },
         distribution: {
-            us_east: { loadZone: 'amazon:us:ashburn', percent: 30 },
-            eu_west: { loadZone: 'amazon:ie:dublin', percent: 30 },
-            au_sydney: { loadZone: 'amazon:eu:frankfurt', percent: 40 }
+            'amazon:us:ashburn': { loadZone: 'amazon:us:ashburn', percent: 30 },
+            'amazon:ie:dublin': { loadZone: 'amazon:ie:dublin', percent: 30 },
+            'amazon:eu:frankfurt': { loadZone: 'amazon:eu:frankfurt', percent: 40 }
         },
         note: 'Testing API performance with distributed load from different locations.',
     }
 };
 
+console.log('User Putted Project ID: '+__ENV.PROJECT_ID);
+
 export function checkoutScenario() {
-    // Get user credentials dynamically within the login function
     const token = loginUser();
 
     if (token) {
-        // Add to cart
-        const cartRes = http.post(`${config.baseUrl}/cart`, JSON.stringify({ itemId: '12345', qty: 1 }), {
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
+        const authHeader = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-        check(cartRes, {
-            'Add to cart success': (r) => r.status === 201,
-        });
+        // Add to cart: Prerequisite for checkout
+        const cartRes = sendPostRequest(`${config.baseUrl}/cart`, { itemId: '12345', qty: 1 }, authHeader);
+        check(cartRes, { 'Add to cart success': (r) => r.status === 201 });
 
-        // Proceed to payment
-        const payRes = http.post(`${config.baseUrl}/pay`, JSON.stringify({ method: 'card' }), {
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
+        // Payment: Prerequisite for checkout
+        const payRes = sendPostRequest(`${config.baseUrl}/pay`, { method: 'card' }, authHeader);
+        check(payRes, { 'Payment success': (r) => r.status === 200 });
 
-        check(payRes, {
-            'Payment success': (r) => r.status === 200,
-        });
-
-        // Proceed to checkout
-        const checkoutRes = http.post(`${config.baseUrl}/checkout`, JSON.stringify({ method: 'card' }), {
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
-
-        check(checkoutRes, {
-            'Checkout success': (r) => r.status === 200,
-        });
+        // Checkout
+        const checkoutRes = sendPostRequest(`${config.baseUrl}/checkout`, { method: 'card' }, authHeader);
+        check(checkoutRes, { 'Checkout success': (r) => r.status === 200 });
     }
+
+    console.log(`Running tests against ${config.baseUrl}`);
+    console.log('User putted duration: '+totalDurationSec);
+    console.log('User putted VUs: '+vus);
+
 }
 
-// Helper function for logging in and dynamically loading user data
 function loginUser() {
-    const users = loadUserData();
+
     const user = users[Math.floor(Math.random() * users.length)];
 
-    // Make the login request using the selected user credentials
-    const authUrl = `${config.baseUrl}${config.authUrl}`;
-    const res = http.post(authUrl, JSON.stringify({ username: user.username, password: user.password }), {
-        headers: { 'Content-Type': 'application/json' },
-    });
+    // console.log('Logging in as', user.username);
+    // console.log('User password is: '+user.password);
 
-    const responseBody = JSON.parse(res.body);
-    if (res.status === 200 && responseBody.token) {
+    const authUrl = `${config.baseUrl}${config.authUrl}`;
+    const loginRes = sendPostRequest(authUrl, { username: user.username, password: user.password });
+
+    const responseBody = JSON.parse(loginRes.body);
+    if (loginRes.status === 200 && responseBody.token) {
         return responseBody.token;
     } else {
-        console.log('Login failed:', res.status, responseBody);
+        console.log('Login failed:', loginRes.status, responseBody);
         return null;
     }
 }
