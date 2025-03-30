@@ -1,5 +1,8 @@
 # Grafana k6 Performance Testing Framework
 
+
+<img src="img/k6.png" alt="k6" width="300" height="300">
+
 A modular, cloud-ready, and chaos-tolerant performance testing framework built with [K6](https://k6.io) for distributed systems and microservices at scale. This framework is designed to simulate 100k+ concurrent users across multiple regions and services.
 
 ---
