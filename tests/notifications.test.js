@@ -1,4 +1,4 @@
-import { check } from 'k6';
+import { check, sleep } from 'k6';
 import {getConfig} from '../lib/config.js';
 import {loadUserData } from '../lib/dataLoader.js';
 import {sendPostRequest} from '../lib/httpHelper.js';
@@ -13,7 +13,7 @@ const rampDown = totalDurationSec - rampUp - stay;
 
 const vus = __ENV.VUS || 100;
 const userInputEnv = __ENV.ENV || 'dev';
-const projectId = __ENV.PROJECT_ID || 123456;
+const projectId = __ENV.K6_CLOUD_PROJECT_ID || 123456;
 const config = getConfig(userInputEnv);
 const users = loadUserData();
 const user = users[Math.floor(Math.random() * users.length)];
@@ -45,16 +45,12 @@ export const options = {
         drop_metrics: ['http_req_tls_handshaking', 'http_req_connecting'],
         drop_tags: { '*': ['instance_id'] },
         keep_tags: { http_req_waiting: ['instance_id'] },
-        distribution: {
-            'amazon:us:ashburn': { loadZone: 'amazon:us:ashburn', percent: 30 },
-            'amazon:ie:dublin': { loadZone: 'amazon:ie:dublin', percent: 30 },
-            'amazon:eu:frankfurt': { loadZone: 'amazon:eu:frankfurt', percent: 40 }
-        },
+        distribution: config.distribution,
         note: 'Testing API performance with distributed load from different locations.',
     }
 };
 
-console.log('User Putted Project ID: '+__ENV.PROJECT_ID);
+console.log('User Putted Project ID: '+projectId);
 
 export function notificationsScenario() {
     const token = loginUser();
@@ -65,6 +61,8 @@ export function notificationsScenario() {
         const userProfileRes = sendPostRequest(fullUrl, { method: 'card' }, authHeader);
         check(userProfileRes, { 'notifications success': (r) => r.status === 200 });
     }
+
+    sleep(Math.random() * 4 + 1); // Randomized wait time (1-5 sec)
 
     console.log(`Running tests against ${fullUrl}`);
     console.log('User putted duration: '+totalDurationSec);

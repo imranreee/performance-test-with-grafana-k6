@@ -7,7 +7,7 @@ A modular, cloud-ready, and chaos-tolerant performance testing framework built w
 ## 📁 Project Structure
 
 
-![Architecture Diagram](./docs/architecture.png)
+![Architecture Diagram](architecture.png)
 
 ---
 ## Installation & Setup
@@ -58,6 +58,21 @@ ENV=prod DURATION=5m VUS=500 k6 run tests/example.test.js
 ```
 
 ### ☁️ 2. K6 Cloud (Distributed Test)
+
+
+> 1. Generate a token, by follow these steps:
+
+* Log in to your Grafana Cloud [account](https://app.k6.io/) and open a stack.
+* On the main menu, click Testing & synthetics -> Performance -> Settings.
+* Click on the Grafana Stack API token tab.
+
+> 2. Authenticate with the login command:
+
+```bash 
+
+k6 cloud login --token $TOKEN
+```
+> 
 > Run globally distributed tests with real-time dashboards
 
 ```bash
@@ -65,6 +80,20 @@ ENV=prod DURATION=5m VUS=500 k6 run tests/example.test.js
 k6 cloud tests/example.test.js
 
 ```
+> Run a test locally and stream the results to the cloud
+```bash
+
+k6 cloud run --local-execution cloud_demo.js
+
+```
+> Run a CLI test in a specific project and custom env variables
+
+```bash
+
+K6_CLOUD_PROJECT_ID=PROJECT_ID ENV=dev DURATION=5m VUS=500 k6 run tests/example.test.js
+
+```
+
 > Make sure your options include:
 
 ```js
@@ -81,7 +110,7 @@ export const options = {
 
 ```
 
-More: [K6 Cloud Documentation](https://grafana.com/docs/grafana-cloud/testing/k6/get-started/)
+More: [K6 Cloud Documentation](https://grafana.com/docs/grafana-cloud/testing/k6/author-run/use-the-cli/)
 
 ### ☸️ 3. Kubernetes via k6-operator (for massive distributed testing)
 
@@ -92,7 +121,7 @@ brew install kubectl
 ```
 ```bash
 
-kubectl apply -f https://github.com/grafana/k6-operator/releases/latest/download/k6-operator.yaml
+kubectl apply -f /path/to/k6-testrun-resource.yaml
 
 ```
 > Create a K6 custom resource:
@@ -196,4 +225,63 @@ Use official K6 Grafana Dashboard or build custom dashboards with metrics:
 
 📸 Sample Dashboard:
 
-![Grafana Dashboard](./docs/grafana_dashboard.png)
+![Grafana Dashboard](grafana_dashboard.png)
+
+---
+
+## Future Scope
+
+### Scaling from 5 to 20+ Services
+1. Modularize Tests:
+Keep test scripts for each service separate. Import common functions or configurations (e.g., URLs, tokens) to avoid redundancy.
+
+2. Configuration Management:
+Use a centralized config file for global settings shared across services.
+
+3. Service-Specific Tests:
+Write individual test cases for each service or module to avoid overlap.
+
+4. Distributed Testing:
+
+    * Use k6 Cloud for cloud scaling.
+
+    * Use Docker or Kubernetes for local, distributed testing (multiple containers running tests).
+
+### Distributed Test Execution (100k+ Users)
+1. k6 Cloud:
+For scaling to 100k+ users, use k6 Cloud for automatic scaling and distributed load generation.
+
+2. Docker-based Setup:
+   * Use Docker containers for distributed execution.
+   * Run tests across multiple nodes (machines/containers) for load distribution.
+
+3. Clustered Execution:
+Use a load balancer to distribute traffic evenly across services during tests.
+
+### Separation of Concerns
+1. Test Logic:
+Keep test logic in separate functions and scripts for better organization.
+
+2. Setup/Teardown:
+Use setup() and teardown() functions to separate test preparation and cleanup.
+
+3. Data Management:
+Store test data in separate files (JSON/CSV) and load them dynamically during tests.
+
+4. Reporting:
+Output results to InfluxDB or Prometheus, and visualize in Grafana.
+
+### Auto-Generate Performance Reports
+1. Track Custom Metrics:
+Use k6’s custom metrics (e.g., response times, throughput) for each service.
+
+2. Send Data to Grafana:
+Use the k6 --out influxdb option to send test data to InfluxDB for visualization.
+
+3. Grafana Dashboards:
+Create a dashboard per service to track key metrics like response time, errors, and throughput.
+
+4. Automate Reports:
+Use Grafana to export dashboards as PDFs or set up alerts for performance thresholds.
+
+
