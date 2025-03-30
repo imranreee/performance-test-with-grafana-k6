@@ -1,0 +1,24 @@
+{
+  "catagory": [
+    {
+      "username": "user1",
+      "password": "pass123"
+    },
+    {
+      "username": "user2",
+      "password": "pass456"
+    },
+    {
+      "username": "user3",
+      "password": "pass456"
+    },
+    {
+      "username": "user4",
+      "password": "pass456"
+    },
+    {
+      "username": "user5",
+      "password": "pass456"
+    }
+  ]
+}

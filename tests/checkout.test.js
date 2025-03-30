@@ -57,6 +57,7 @@ console.log('User Putted Project ID: '+__ENV.PROJECT_ID);
 
 export function checkoutScenario() {
     const token = loginUser();
+    const fullUrl = `${config.baseUrl}/checkout`;
 
     if (token) {
         const authHeader = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -70,14 +71,13 @@ export function checkoutScenario() {
         check(payRes, { 'Payment success': (r) => r.status === 200 });
 
         // Checkout
-        const checkoutRes = sendPostRequest(`${config.baseUrl}/checkout`, { method: 'card' }, authHeader);
+        const checkoutRes = sendPostRequest(fullUrl, { method: 'card' }, authHeader);
         check(checkoutRes, { 'Checkout success': (r) => r.status === 200 });
     }
 
-    console.log(`Running tests against ${config.baseUrl}`);
+    console.log(`Running tests against ${fullUrl}`);
     console.log('User putted duration: '+totalDurationSec);
     console.log('User putted VUs: '+vus);
-
 }
 
 function loginUser() {

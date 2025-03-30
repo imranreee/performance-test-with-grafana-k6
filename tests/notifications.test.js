@@ -16,13 +16,14 @@ const userInputEnv = __ENV.ENV || 'dev';
 const projectId = __ENV.PROJECT_ID || 123456;
 const config = getConfig(userInputEnv);
 const users = loadUserData();
+const user = users[Math.floor(Math.random() * users.length)];
 
 export const options = {
     scenarios: {
         checkout_scenario: {
             executor: 'ramping-vus',
-            exec: 'generateAuthScenario',
-            tags: { service: 'auth' },
+            exec: 'notificationsScenario',
+            tags: { service: 'notifications' },
             stages: [
                 { duration: `${rampUp}s`, target: vus },
                 { duration: `${stay}s`, target: vus },
@@ -32,9 +33,9 @@ export const options = {
     },
 
     thresholds: {
-        'http_req_duration{service:auth}': ['p(95)<400'],
-        'http_req_failed{service:auth}': ['rate<0.01'],
-        'checks{service:auth}': ['rate>0.99'],
+        'http_req_duration{service:notifications}': ['p(95)<400'],
+        'http_req_failed{service:notifications}': ['rate<0.01'],
+        'checks{service:notifications}': ['rate>0.99'],
     },
 
     cloud: {
@@ -55,19 +56,33 @@ export const options = {
 
 console.log('User Putted Project ID: '+__ENV.PROJECT_ID);
 
-export function generateAuthScenario() {
+export function notificationsScenario() {
+    const token = loginUser();
+    const fullUrl = `${config.baseUrl}/notifications`;
 
-    const user = users[Math.floor(Math.random() * users.length)];
+    if (token) {
+        const authHeader = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+        const userProfileRes = sendPostRequest(fullUrl, { method: 'card' }, authHeader);
+        check(userProfileRes, { 'notifications success': (r) => r.status === 200 });
+    }
 
-    console.log('Logging in as', user.username);
-    console.log('User password is: '+user.password);
+    console.log(`Running tests against ${fullUrl}`);
+    console.log('User putted duration: '+totalDurationSec);
+    console.log('User putted VUs: '+vus);
+}
+
+function loginUser() {
+    // console.log('Logging in as', user.username);
+    // console.log('User password is: '+user.password);
 
     const authUrl = `${config.baseUrl}${config.authUrl}`;
     const loginRes = sendPostRequest(authUrl, { username: user.username, password: user.password });
 
-    check(loginRes, { 'Checkout success': (r) => r.status === 200 });
-
-    console.log('User putted duration: '+totalDurationSec);
-    console.log('User putted VUs: '+vus);
-    console.log('Running test against: '+authUrl);
+    const responseBody = JSON.parse(loginRes.body);
+    if (loginRes.status === 200 && responseBody.token) {
+        return responseBody.token;
+    } else {
+        console.log('Login failed:', loginRes.status, responseBody);
+        return null;
+    }
 }

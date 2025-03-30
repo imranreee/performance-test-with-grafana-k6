@@ -1,7 +1,7 @@
 import { check } from 'k6';
 import {getConfig} from '../lib/config.js';
 import {loadUserData } from '../lib/dataLoader.js';
-import {sendPostRequest} from '../lib/httpHelper.js';
+import {sendGetRequest, sendPostRequest} from '../lib/httpHelper.js';
 import {parseDuration} from "../lib/timeHelper.js";
 
 const durationStr = __ENV.DURATION || '5m';
@@ -21,8 +21,8 @@ export const options = {
     scenarios: {
         checkout_scenario: {
             executor: 'ramping-vus',
-            exec: 'generateAuthScenario',
-            tags: { service: 'auth' },
+            exec: 'catalogScenario',
+            tags: { service: 'catalog' },
             stages: [
                 { duration: `${rampUp}s`, target: vus },
                 { duration: `${stay}s`, target: vus },
@@ -32,9 +32,9 @@ export const options = {
     },
 
     thresholds: {
-        'http_req_duration{service:auth}': ['p(95)<400'],
-        'http_req_failed{service:auth}': ['rate<0.01'],
-        'checks{service:auth}': ['rate>0.99'],
+        'http_req_duration{service:catalog}': ['p(95)<400'],
+        'http_req_failed{service:catalog}': ['rate<0.01'],
+        'checks{service:catalog}': ['rate>0.99'],
     },
 
     cloud: {
@@ -55,19 +55,36 @@ export const options = {
 
 console.log('User Putted Project ID: '+__ENV.PROJECT_ID);
 
-export function generateAuthScenario() {
+export function catalogScenario() {
+    const token = loginUser();
+    const fullUrl = `${config.baseUrl}/catalog`;
+
+    if (token) {
+        const authHeader = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+        const catalogRes = sendGetRequest(fullUrl, authHeader);
+        check(catalogRes, { 'Catalog success': (r) => r.status === 200 });
+    }
+
+    console.log(`Running tests against ${fullUrl}`);
+    console.log('User putted duration: '+totalDurationSec);
+    console.log('User putted VUs: '+vus);
+}
+
+function loginUser() {
 
     const user = users[Math.floor(Math.random() * users.length)];
 
-    console.log('Logging in as', user.username);
-    console.log('User password is: '+user.password);
+    // console.log('Logging in as', user.username);
+    // console.log('User password is: '+user.password);
 
     const authUrl = `${config.baseUrl}${config.authUrl}`;
     const loginRes = sendPostRequest(authUrl, { username: user.username, password: user.password });
 
-    check(loginRes, { 'Checkout success': (r) => r.status === 200 });
-
-    console.log('User putted duration: '+totalDurationSec);
-    console.log('User putted VUs: '+vus);
-    console.log('Running test against: '+authUrl);
+    const responseBody = JSON.parse(loginRes.body);
+    if (loginRes.status === 200 && responseBody.token) {
+        return responseBody.token;
+    } else {
+        console.log('Login failed:', loginRes.status, responseBody);
+        return null;
+    }
 }
