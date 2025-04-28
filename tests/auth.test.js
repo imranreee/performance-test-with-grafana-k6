@@ -4,14 +4,14 @@ import {loadUserData } from '../lib/dataLoader.js';
 import {sendPostRequest} from '../lib/httpHelper.js';
 import {parseDuration} from "../lib/timeHelper.js";
 
-const durationStr = __ENV.DURATION || '5m';
+const durationStr = __ENV.DURATION || '5s';
 const totalDurationSec = parseDuration(durationStr);
 
 const rampUp = Math.floor(totalDurationSec * 0.1);
 const stay = Math.floor(totalDurationSec * 0.8);
 const rampDown = totalDurationSec - rampUp - stay;
 
-const vus = __ENV.VUS || 100;
+const vus = __ENV.VUS || 5;
 const userInputEnv = __ENV.ENV || 'dev';
 const projectId = __ENV.K6_CLOUD_PROJECT_ID || 123456;
 const config = getConfig(userInputEnv);
@@ -40,16 +40,16 @@ export const options = {
     cloud: {
         name: 'Distributed Load Test',
         projectID: projectId,
-        staticIPs: true,
+        //staticIPs: true,
         drop_metrics: ['http_req_tls_handshaking', 'http_req_connecting'],
         drop_tags: { '*': ['instance_id'] },
         keep_tags: { http_req_waiting: ['instance_id'] },
-        distribution: config.distribution,
+        //distribution: config.distribution,
         note: 'Testing API performance with distributed load from different locations.',
     }
 };
 
-console.log('User Putted Project ID: '+projectId);
+// console.log('User Putted Project ID: '+projectId);
 
 export function generateAuthScenario() {
 

@@ -89,11 +89,15 @@ k6 cloud tests/example.test.js
 k6 cloud run --local-execution cloud_demo.js
 
 ```
-> Run a CLI test in a specific project and custom env variables
+> Run a CLI test in a specific project with custom env variables
 
 ```bash
 
-K6_CLOUD_PROJECT_ID=PROJECT_ID ENV=dev DURATION=5m VUS=500 k6 run tests/example.test.js
+K6_CLOUD_PROJECT_ID=<project_id> \
+k6 cloud tests/auth.test.js \
+--env ENV=staging \
+--env DURATION=6s \
+--env VUS=6
 
 ```
 
