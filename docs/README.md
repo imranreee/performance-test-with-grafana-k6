@@ -15,14 +15,14 @@ A modular, cloud-ready, and chaos-tolerant performance testing framework built w
 ---
 ## Installation & Setup
 > For macOS (Homebrew)
-> Install K6 using Homebrew:
+> Install k6 using Homebrew:
 
 ```bash
 
 brew install k6
 ```
 > For Linux
-> Install K6 using APT:
+> Install k6 using APT:
 
 ```bash
 
